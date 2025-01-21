@@ -3,6 +3,44 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 
+const gridSize = 3;
+
+const lines = [
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8],
+  [0, 3, 6],
+  [1, 4, 7],
+  [2, 5, 8],
+  [0, 4, 8],
+  [2, 4, 6],
+];
+
+function getRowCol(index, gridSize) {
+  const row = Math.floor(index / gridSize) + 1; // Add 1 to make it 1-based
+  const col = (index % gridSize) + 1; // Add 1 to make it 1-based
+  return { row, col };
+}
+
+function calculateWinner(squares) {
+  for (let i = 0; i < lines.length; i++) {
+    const [a, b, c] = lines[i];
+    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+      return squares[a];
+    }
+  }
+  return null;
+}
+
+function calculateWinningLine(squares) {
+  for (let i = 0; i < lines.length; i++) {
+    const [a, b, c] = lines[i];
+    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+      return lines[i];
+    }
+  }
+}
+
 function Square({ value, onSquareClick, isWinningSquare }) {
   return (
     <button
@@ -25,7 +63,7 @@ function Board({ xIsNext, squares, onPlay }) {
     } else {
       nextSquares[i] = "O";
     }
-    onPlay(nextSquares);
+    onPlay(nextSquares, i, gridSize);
   }
 
   const winner = calculateWinner(squares);
@@ -41,8 +79,6 @@ function Board({ xIsNext, squares, onPlay }) {
   } else {
     status = "Next player: " + (xIsNext ? "X" : "O");
   }
-
-  const gridSize = 3;
 
   return (
     <>
@@ -74,11 +110,16 @@ export default function Game() {
   const [history, setHistory] = useState([Array(9).fill(null)]);
   const [currentMove, setCurrentMove] = useState(0);
   const [sortOrder, setSortOrder] = useState("asc");
-  const currentSquares = history[currentMove];
+  const currentSquares = history[currentMove]?.squares || Array(9).fill(null);
   const xIsNext = currentMove % 2 === 0;
+  //const currentPlayer = !xIsNext ? "X" : "O";
 
-  function handlePlay(nextSquares) {
-    const nextHistory = [...history.slice(0, currentMove + 1), nextSquares];
+  function handlePlay(nextSquares, moveIndex, gridSize) {
+    const nextHistory = [
+      ...history.slice(0, currentMove + 1),
+      { squares: nextSquares, moveIndex },
+    ];
+
     setHistory(nextHistory);
     setCurrentMove(nextHistory.length - 1);
   }
@@ -91,12 +132,14 @@ export default function Game() {
     setSortOrder(newSortOrder);
   };
 
-  const moves = history.map((squares, move) => {
+  const moves = history.map((entry, move) => {
     let description;
+    const { row, col } = getRowCol(entry.moveIndex, gridSize); // 3 is the grid size
+    const player = move % 2 === 0 ? "O" : "X"; // Determine the player for the move
     if (move === currentMove) {
       return;
     } else if (move > 0) {
-      description = "Go to move #" + move;
+      description = `Go to move # ${move} Player ${player}: Row ${row}, Col${col}`;
     } else {
       description = "Go to game start";
     }
@@ -136,32 +179,4 @@ export default function Game() {
   );
 }
 
-const lines = [
-  [0, 1, 2],
-  [3, 4, 5],
-  [6, 7, 8],
-  [0, 3, 6],
-  [1, 4, 7],
-  [2, 5, 8],
-  [0, 4, 8],
-  [2, 4, 6],
-];
 
-function calculateWinner(squares) {
-  for (let i = 0; i < lines.length; i++) {
-    const [a, b, c] = lines[i];
-    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a];
-    }
-  }
-  return null;
-}
-
-function calculateWinningLine(squares) {
-  for (let i = 0; i < lines.length; i++) {
-    const [a, b, c] = lines[i];
-    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return lines[i];
-    }
-  }
-}
